@@ -79,5 +79,5 @@ df2 |>
 ```
 
 ```{r}
-ggsave("wages.png", width = 1920, height = 1080, units = "px", dpi = 132)
+ggsave("week31.png", width = 1920, height = 1080, units = "px", dpi = 132)
 ```
