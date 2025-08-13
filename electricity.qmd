@@ -1,0 +1,151 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(ggblur)
+library(countrycode)
+library(ggforce)
+library(scales)
+library(showtext)
+```
+
+```{r}
+font_add_google('Raleway', 'rale')
+showtext_auto()
+```
+
+```{r}
+title <- "The Road to Illumination: \nShedding Light on Global Access to Electricity"
+caption <- "Data: World Bank Group | Vis: MhKirmizi"
+label <- 'This polar plot spotlights countries still \nracing to achieve full electrification. \nBrighter segments reveal where a larger \nshare of the population already has access, \nwhile dimmer ones mark the places \nwhere the lights have yet to reach everyone.'
+```
+
+```{r}
+df2 <- read_csv("D:/VIS/data_makeovermonday/API_EG.ELC.ACCS.ZS_DS2_en_csv_v2_38353/API_EG.ELC.ACCS.ZS_DS2_en_csv_v2_38353.csv")
+df2 <- df2 |>
+  rename(rate = ...3)
+df2 |> head()
+df2 |> slice(-1)
+df2 <- df2 |>
+  slice(-1) |>
+  mutate(
+    rate = if_else(is.na(rate), "", rate)
+  ) |>
+  separate_wider_delim(rate,
+    delim = ",", names = c(paste0("var", 1:88)),
+    too_few = "align_end", too_many = "merge"
+  ) |>
+  select(-c(var23:var52)) |>
+  select(-c(var1:var20)) |>
+  select(-c(var87, var88)) |>
+  mutate(across(everything(), ~ na_if(., "")))
+df2 |> head()
+new_names <- as.character(unlist(df2[1, ]))
+df2 <- df2[-1,]
+colnames(df2) <- new_names
+df2<- df2 |>
+  mutate(
+    across(
+      matches("^\\d{4}$"), # any column name that is 4 digits (year)
+      ~ as.numeric(str_replace_all(str_trim(.), '"', ""))
+    )
+  )
+df2$`1990` |> unique() |> view()
+df2 <- df2 |>
+  mutate(
+   across(
+      matches("^\\d{4}$"),
+      ~ na_if(str_replace_all(str_trim(.), '"', ""), "Invalid Number")
+    )
+  ) 
+
+df2_long <- df2 |>
+  pivot_longer(
+    !c(
+      "Country Name", "Country Code",
+      "Indicator Name", "Indicator Code"
+    ),
+    names_to = "Year",
+    values_to = "%_of_elec"
+  )
+```
+
+```{r}
+df2_long <- df2_long |> 
+rename('percent' = "%_of_elec")
+```
+
+```{r}
+df2_long <- df2_long |> 
+mutate(
+    percent = as.numeric(str_replace_all(percent, "%", "")), 
+    percent = round(percent, 2)
+)
+```
+
+```{r}
+df2_long <- df2_long |> 
+mutate(
+    Year = as.numeric(Year)
+) |> 
+rename(
+    'Name' = 'Country Name', 
+    'Code' = 'Country Code'
+)
+
+```
+
+```{r}
+df2_long <- df2_long |> 
+mutate(
+    Year = as.integer(Year)
+)
+```
+
+```{r}
+df2_2023 <- df2_long |> 
+  filter(!is.na(countrycode(Name, origin = 'country.name', destination = 'iso3c'))) |> 
+  filter(Year == '2023' & percent != 100)
+
+```
+
+```{r}
+ggplot(df2_2023, aes(x = percent, y = reorder(Name, percent))) +
+  geom_segment(aes(x = 0, xend = percent, y = reorder(Name, percent), yend = reorder(Name, percent)), size = 0.5)
+```
+
+```{r} 
+ ggplot(df2_2023, aes(x = percent, y=Name)) +
+ geom_point_blur(aes(size = percent, blur_size = percent, color = percent)) +
+ ggforce::geom_link(aes(x = 0, xend = percent, 
+           y = Name, yend = Name, 
+           color = percent,
+           alpha = percent), 
+           size = .25
+           ) +
+ xlim(-33.5, 100) +
+ coord_polar(theta = 'x',start = pi, clip = 'off') +
+ annotate('text', x = -12, y = 65, label = label, 
+ color = '#FFFFFFFF', size = 4.5, family = 'rale') +
+ labs(x = '', y = '', title = title, caption = caption) +
+ paletteer::scale_color_paletteer_c("scico::oslo")+
+ paletteer::scale_fill_paletteer_c("scico::oslo") +
+ theme_void()+
+ theme(
+  axis.text = element_blank(), 
+  legend.position = 'none',
+  plot.title = element_text(size = 26, hjust = .5, family = 'rale',
+  face = 'bold', color = '#FFFFFFFF'),
+  plot.caption = element_text(size = 14,family = 'rale' ,color = '#FFFFFFFF'),
+  plot.background = element_rect(color = '#0B132B', '#0B132B'),
+  panel.background = element_rect(color = '#0B132B', '#0B132B'), 
+  plot.margin = margin(10, 20, 10, 20)
+ )
+```
+
+```{r}
+ggsave("road_to_illumination.png", width = 1920, height = 1080, units = "px", dpi = 132)
+```
