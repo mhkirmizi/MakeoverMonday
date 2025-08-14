@@ -1,0 +1,87 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(lemon)
+library(ggrain)
+library(showtext)
+library(ggrepel)
+```
+
+```{r}
+font_add_google('Arimo', 'arimo')
+showtext_auto()
+```
+
+```{r}
+title <- 'How Countries Rank on Corruption Perceptions'
+caption <- "Data: OurWorldInData | Vis:MhKirmizi"
+```
+
+```{r}
+df <- read_csv('D:/VIS/data_makeovermonday/makeovermonday-corruption/data/ti_corruption_perception_index.csv')
+```
+
+```{r}
+df_mean <- df |> 
+    group_by(entity) |> 
+    summarise(avg_corruption = mean(corruption_perceptions_index, na.rm = TRUE)) |> 
+    drop_na() |> 
+    arrange(-avg_corruption)
+```
+
+```{r}
+df |> 
+    drop_na(world_regions_according_to_owid) |> 
+    drop_na(corruption_perceptions_index) |> 
+    ggplot(aes(world_regions_according_to_owid, corruption_perceptions_index)) +
+    geom_point(position = position_jitter(width = .1), 
+             aes(color = world_regions_according_to_owid), 
+             size = 6) +
+    coord_flex_cart(bottom=brackets_horizontal()) +
+    theme_classic()
+```
+
+```{r}
+least_corrupt <- df |> 
+    drop_na(world_regions_according_to_owid) |> 
+    drop_na(corruption_perceptions_index) |>  
+    group_by(world_regions_according_to_owid) |> 
+    slice_max(corruption_perceptions_index, n =1) |> 
+    pull(entity)
+```
+
+```{r}
+labels_df <- df %>%
+  filter(entity %in% c("Seychelles", "Denmark", "Singapore", "Canada", "New Zealand", "Uruguay")) %>%
+  drop_na(world_regions_according_to_owid, corruption_perceptions_index)
+```
+
+```{r}
+df |> 
+    drop_na(world_regions_according_to_owid) |> 
+    drop_na(corruption_perceptions_index) |> 
+    ggplot(aes(world_regions_according_to_owid, corruption_perceptions_index, fill = world_regions_according_to_owid)) +
+    geom_rain(alpha = .6) +
+    coord_flex_cart(bottom=brackets_horizontal()) +
+    geom_text_repel(data = labels_df, aes(label = entity),
+                  nudge_y = 3, 
+                  direction = "y",
+                  segment.color = NA)  +
+    paletteer::scale_fill_paletteer_d("Manu::Kakapo") +
+    labs(x = '', y = 'Corruption Perception Index', title = title, caption = caption) +
+    theme_classic(base_family = 'arimo', base_size = 14) +
+    theme(
+        legend.position = 'none', 
+        plot.title = element_text(size = 36, hjust = .5, face = 'bold'),
+        panel.grid.major.y = element_line(linetype = 'dashed')
+    )
+```
+
+```{r}
+ggsave("corruption.png", width = 1920, height = 1080, units = "px", dpi = 132)  
+
+```
