@@ -8,6 +8,7 @@ library(tidyverse)
 library(lemon)
 library(ggrain)
 library(showtext)
+library(ggtext)
 library(ggrepel)
 ```
 
@@ -17,7 +18,8 @@ showtext_auto()
 ```
 
 ```{r}
-title <- 'How Countries Rank on Corruption Perceptions'
+title <- 'How Nations Percevied Their Corruption'
+subtitle <- 'For most nations, more than half of the population already believes that corruption exists. The distributions reveal an \ninteresting pattern: Africa and Asia display a right-skewed shape with a few outliers, North America follows a very flat \nnormal distribution, and Europe — perceived as less corrupt than the rest of the world — exhibits a bimodal distribution.'
 caption <- "Data: OurWorldInData | Vis:MhKirmizi"
 ```
 
@@ -35,53 +37,23 @@ df_mean <- df |>
 
 ```{r}
 df |> 
-    drop_na(world_regions_according_to_owid) |> 
-    drop_na(corruption_perceptions_index) |> 
-    ggplot(aes(world_regions_according_to_owid, corruption_perceptions_index)) +
-    geom_point(position = position_jitter(width = .1), 
-             aes(color = world_regions_according_to_owid), 
-             size = 6) +
-    coord_flex_cart(bottom=brackets_horizontal()) +
-    theme_classic()
-```
-
-```{r}
-least_corrupt <- df |> 
-    drop_na(world_regions_according_to_owid) |> 
-    drop_na(corruption_perceptions_index) |>  
-    group_by(world_regions_according_to_owid) |> 
-    slice_max(corruption_perceptions_index, n =1) |> 
-    pull(entity)
-```
-
-```{r}
-labels_df <- df %>%
-  filter(entity %in% c("Seychelles", "Denmark", "Singapore", "Canada", "New Zealand", "Uruguay")) %>%
-  drop_na(world_regions_according_to_owid, corruption_perceptions_index)
-```
-
-```{r}
-df |> 
-    drop_na(world_regions_according_to_owid) |> 
+     drop_na(world_regions_according_to_owid) |> 
     drop_na(corruption_perceptions_index) |> 
     ggplot(aes(world_regions_according_to_owid, corruption_perceptions_index, fill = world_regions_according_to_owid)) +
     geom_rain(alpha = .6) +
-    coord_flex_cart(bottom=brackets_horizontal()) +
-    geom_text_repel(data = labels_df, aes(label = entity),
-                  nudge_y = 3, 
-                  direction = "y",
-                  segment.color = NA)  +
+    coord_flex_cart(bottom=brackets_horizontal()) + 
     paletteer::scale_fill_paletteer_d("Manu::Kakapo") +
-    labs(x = '', y = 'Corruption Perception Index', title = title, caption = caption) +
+    labs(x = '', y = 'Corruption Perception Index', title = title, subtitle = subtitle,caption = caption) +
     theme_classic(base_family = 'arimo', base_size = 14) +
     theme(
         legend.position = 'none', 
         plot.title = element_text(size = 36, hjust = .5, face = 'bold'),
-        panel.grid.major.y = element_line(linetype = 'dashed')
+        plot.subtitle = element_text(size = 20, hjust = .5),
+        panel.grid.major.y = element_line(linetype = 'dashed'),
+
     )
 ```
 
 ```{r}
-ggsave("corruption.png", width = 1920, height = 1080, units = "px", dpi = 132)  
-
+ggsave("corruption.png", width = 1920, height = 1080, units = "px", dpi = 132)
 ```
