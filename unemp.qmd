@@ -1,0 +1,155 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(lemon)
+library(showtext)
+```
+
+```{r}
+font_add_google("EB Garamond")
+showtext_auto()
+```
+
+```{r}
+subtitle <- 'This chart illustrates changes in UK unemployment over time. Thick bars highlight decade averages, \ndots represent yearly rates, and dashed lines capture the gap between annual rates and their decade average.'
+title <- 'Decade Averages and Annual Patterns of UK Unemployment'
+
+```
+
+
+```{r}
+df <- read_csv("D:/VIS/data_makeovermonday/makeovermonday-2025-week-34-unemployment-rate/makeovermonday-2025-week-34-unemployment-rate/data/series_180825_1.csv")
+```
+
+```{r}
+df_year <- df |> 
+slice(-c(1:7)) |> 
+slice(c(1:54))
+```
+
+```{r}
+df_year <- df_year |> 
+rename(unp_year = unemployment_rate_aged_16_and_over_seasonally_adjusted )
+
+```
+
+```{r}
+df_quarter <- df |> 
+slice(-c(1:7)) |> 
+slice(c(55:272))
+```
+
+```{r}
+df_month <- df |> 
+slice(-c(1:7)) |> 
+slice(c(273:924))
+```
+
+```{r}
+df_quarter <- df_quarter |> 
+separate(title, into = c('year', 'quarter'), sep = ' ')
+```
+
+```{r}
+df_quarter <- df_quarter |> 
+rename(unp_quar = unemployment_rate_aged_16_and_over_seasonally_adjusted )
+```
+
+```{r}
+df_month <- df_month |> 
+separate(title, into = c('year', 'month'), sep = ' ')
+```
+
+```{r}
+df_month <- df_month |> 
+rename(unp_month = unemployment_rate_aged_16_and_over_seasonally_adjusted )
+```
+
+```{r}
+df_year <- df_year |> 
+mutate(year = as.integer(title), 
+        unp_year = as.numeric(unp_year), 
+        decade = floor(year/10)*10) |> 
+        select(c(decade, year, unp_year)) 
+```
+
+```{r}
+df_year_avg <- df_year |> 
+group_by(decade) |> 
+summarise(avg_unp = mean(unp_year, na.rm = TRUE), 
+          first_year = min(year, na.rm = TRUE), 
+          last_year = max(year, na.rm = TRUE), 
+          mid = median(year, na.rm = TRUE))
+```
+
+```{r}
+df_year <- df_year |> 
+left_join(df_year_avg, by = 'decade')
+```
+
+```{r}
+df_year <- df_year |> 
+mutate(diff = unp_year - avg_unp,
+       decade = as.factor(decade) )
+
+```
+
+
+```{r}
+ggplot(df_year)+
+geom_segment(aes(
+        x = first_year, xend = last_year, 
+        y = avg_unp, yend= avg_unp, color = decade), size = 2) +
+geom_point(aes(year, unp_year, color = decade), size = 2.5) +
+geom_segment(aes(
+        x=year, xend = year,
+        y = avg_unp, yend = unp_year, 
+        color = decade),
+        linetype = 'dashed') +
+paletteer::scale_color_paletteer_d("beyonce::X1") +
+paletteer::scale_fill_paletteer_d("beyonce::X1") +
+scale_y_continuous(breaks = seq(5, 11, 2.5), labels =seq(5, 11, 2.5)) +
+geom_label(
+    aes(
+      mid, 
+      12.5, 
+      label = decade,
+      color = decade, 
+    ),
+    fill = NA,
+    label.padding = unit(.2, "lines"),
+    label.r = unit(.25, "lines"), # radius of the rounder corners.
+    label.size = .75
+  ) +
+labs(
+        y = 'Average Unpleyment in (Decade)',
+        title = title,
+        subtitle = subtitle,
+        caption = "Data:ONS-UK | Vis: MhKirmizi "
+)+
+ cowplot::theme_minimal_hgrid() +
+ theme(
+        text = element_text(size = 16, family = "EB Garamond"), 
+        plot.title = element_text(size = 42, face= 'bold', family = "EB Garamond" , hjust= .5),
+        plot.subtitle = element_text(size = 24, hjust = .5), 
+        plot.caption = element_text(size = 16),
+        legend.position = 'none',
+        plot.background = element_rect(fill = "#F1F4EEFF", color = "#F1F4EEFF"), 
+        panel.background = element_rect(fill = "#F1F4EEFF", color = "#F1F4EEFF"),
+        axis.text.y = element_text(size = 16),
+        axis.line.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank()
+
+ )
+```
+### The idea is to create a lollipop chart based on avg_unp decade and yearly distribution. just like cedric.
+
+```{r}
+ggsave("unemp.png", width = 1632, height = 918, units = "px", dpi = 132)
+```
