@@ -1,0 +1,49 @@
+library(tidyverse)
+library(showtext)
+### Fonts
+font_add_google("Roboto Condensed", 'rc')
+font_add_google('Roboto', 'robo')
+showtext_auto()
+
+### Data Wrangling
+
+ df_plot <- df |> 
+  pivot_longer(
+    cols = -`State Name`, 
+    names_to = 'place', 
+    values_to = 'job'
+  ) |> 
+  group_by(place, job) |> 
+  count() |> 
+   mutate(job = ifelse(n >= 6, job, 'Other')) |> 
+   group_by(place, job) |> 
+   summarise(n = sum(n), .groups = 'drop')
+### Plotting
+df_plot |> 
+  mutate(job = forcats::fct_reorder(job, n, .fun = sum)) |> 
+  ggplot(aes(x = place, y = n, fill = job)) +
+  geom_col(stat = 'identity', position = 'stack', ) +
+  geom_text(data = filter(df_plot, n > 1), 
+            aes(label = job),
+            position = position_stack(vjust = .52), 
+            color = 'grey6') + 
+  coord_flip() +
+  paletteer::scale_fill_paletteer_d("rcartocolor::Earth")+
+  labs(x = NULL, 
+       y = NULL, 
+       title = 'What Jobs Are in Highest Demand in US?', 
+       caption = 'Data: MakeoverMonday W4, 2026 | Vis: MhKirmizi') +
+  guides(fill = FALSE) +
+  ggimprensa::tema_folha(base_size = 14, base_family = 'robo') +
+  theme(
+    plot.title = element_text(size = 28, family = 'rc', face = 'bold', color = 'grey6'), 
+    plot.caption = element_text(size =12), 
+    axis.text = element_text(size =13),
+    axis.ticks.y = element_blank(), 
+    axis.text.x = element_blank(),
+    plot.background = element_rect(fill = 'white', color = 'white'), 
+    panel.background = element_rect(fill = 'white', color = 'white')
+  )
+ggsave("week4.png", width = 1920, height = 1080, units = "px", dpi = 132)   
+
+
