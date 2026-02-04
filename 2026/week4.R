@@ -22,9 +22,8 @@ showtext_auto()
 df_plot |> 
   mutate(job = forcats::fct_reorder(job, n, .fun = sum)) |> 
   ggplot(aes(x = place, y = n, fill = job)) +
-  geom_col(stat = 'identity', position = 'stack', ) +
-  geom_text(data = filter(df_plot, n > 1), 
-            aes(label = job),
+  geom_col(position = 'stack') +
+  geom_text(aes(label = job),
             position = position_stack(vjust = .52), 
             color = 'grey6') + 
   coord_flip() +
@@ -34,7 +33,7 @@ df_plot |>
        title = 'What Jobs Are in Highest Demand in US?', 
        caption = 'Data: MakeoverMonday W4, 2026 | Vis: MhKirmizi') +
   guides(fill = FALSE) +
-  ggimprensa::tema_folha(base_size = 14, base_family = 'robo') +
+ ggimprensa::tema_folha(base_size = 14, base_family = 'robo') +
   theme(
     plot.title = element_text(size = 28, family = 'rc', face = 'bold', color = 'grey6'), 
     plot.caption = element_text(size =12), 
