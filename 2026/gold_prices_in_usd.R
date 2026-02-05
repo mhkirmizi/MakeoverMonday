@@ -27,16 +27,21 @@ df |>
   scale_x_date() +
   scale_y_continuous(breaks = seq(50, 170, 50), 
                      labels = label_dollar(suffix = 'K')) +
-  annotate("text", x = as.Date('2011-08-24'), y = 101, 
-           label = "All time high", vjust = 1, color= "white", size = 6) +
+  annotate("text", x = as.Date('2011-08-24'), y = 80, 
+           label = "Former All-Time High", vjust = 1, color= "white", size = 6) +
   geom_segment(aes(x = as.Date('2011-07-25'),
                    xend = as.Date('2011-07-25'),
-                   y = 62, yend = 95), color = 'grey66', linetype = 3) +
-  annotate("text", x = as.Date('2022-02-27'), y = 101, 
+                   y = 62, yend = 74), color = 'grey66', linetype = 3) +
+  annotate("text", x = as.Date('2022-02-27'), y = 97, 
            label = "Ukraine War", vjust = 1, color= "white", size = 6) +
   geom_segment(aes(x = as.Date('2022-02-27'),
                    xend = as.Date('2022-02-27'),
-                   y = 62, yend = 95), color = 'grey66', linetype = 3) +
+                   y = 62, yend = 91), color = 'grey66', linetype = 3) +
+  annotate("text", x = as.Date('2024-07-16'), y = 144, 
+           label = "Trump Presidency", vjust = 1, color= "white", size = 6) +
+  geom_segment(aes(x = as.Date('2025-01-12'),
+                   xend = as.Date('2025-01-12'),
+                   y = 93, yend = 138), color = 'grey66', linetype = 3) +
   labs(x = '', 
        y = 'Closing Price ($)', 
        title = 'Gold Reacts When the World Breaks', 
